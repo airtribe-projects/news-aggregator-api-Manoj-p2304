@@ -1,17 +1,27 @@
 const express = require('express');
-const app = express();
-const port = 3000;
+const helmet = require('helmet');
 
+const userRoutes = require('./src/routes/userRoutes');
+const newsRoutes = require('./src/routes/newsRoutes');
+const notFound = require('./src/middleware/notFound');
+const errorHandler = require('./src/middleware/errorHandler');
+
+const app = express();
+
+app.use(helmet()); // sensible security headers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.listen(port, (err) => {
-    if (err) {
-        return console.log('Something bad happened', err);
-    }
-    console.log(`Server is listening on ${port}`);
+// Simple liveness probe.
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
+app.use('/users', userRoutes);
+app.use('/news', newsRoutes);
 
+// 404 + centralized error handling come last.
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
